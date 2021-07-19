@@ -1,0 +1,160 @@
+---
+title: "Paralelismo em Algorítmos Genéticos"
+output:
+  html_notebook: default
+  pdf_document: default
+---
+# Preparação
+Ler bibliotecas
+```{r}
+library(tidyverse)
+library(gganimate)
+library(gifski)
+```
+Ler dados do arquivo texto
+```{r}
+dados = read_csv("teste.txt")
+speedup = read_csv("tempos.csv")
+ilhas = read_csv("ilhas.txt")
+gf=read_csv("granulacaofina.txt",col_types = cols(
+    ger = col_integer(),
+    no = col_integer(),
+    val = col_double(),
+    fit=col_double()
+  ))
+```
+# Gráficos
+## Versão sequêncial
+Visualização da fitness da população ao passar das gerações.
+```{r}
+ggplot(data=dados)+
+  geom_point(mapping=aes(x=ger, y=melhor, color="melhor") )+
+  geom_point(mapping=aes(x=ger, y=Medio, color="medio"))+
+  geom_point(mapping=aes(x=ger, y=pior, color="pior"))+
+  scale_y_continuous(breaks=c(-2,-1, 0, 1,max(dados$melhor)))+
+  scale_colour_manual(name="Curvas",
+      values=c(melhor="green", medio="blue", pior="red"))+
+  labs(y="Fitness")+
+  labs(x="Geração")
+```
+Em retas
+```{r}
+ggplot(data=dados)+
+  geom_line(mapping=aes(x=ger, y=melhor, color="melhor") )+
+  geom_line(mapping=aes(x=ger, y=Medio, color="medio"))+
+  geom_line(mapping=aes(x=ger, y=pior, color="pior"))+
+  scale_y_continuous(breaks=c(-2,-1, 0, 1,max(dados$melhor)))+
+  scale_colour_manual(name="Curvas",
+      values=c(melhor="green", medio="blue", pior="red"))+
+  labs(y="Fitness")+
+  labs(x="Geração")
+```
+Em linhas de aproximação
+```{r}
+ggplot(data=dados)+
+  geom_smooth(mapping=aes(x=ger, y=melhor, color="melhor") )+
+  geom_smooth(mapping=aes(x=ger, y=Medio, color="medio"))+
+  geom_smooth(mapping=aes(x=ger, y=pior, color="pior"))+
+  scale_y_continuous(breaks=c(-2,-1, 0, 1,max(dados$melhor)))+
+  scale_colour_manual(name="Curvas",
+      values=c(melhor="green", medio="blue", pior="red"))+
+  labs(y="Fitness")+
+  labs(x="Geração")
+```
+
+
+
+
+Apenas o melhor
+```{r}
+ggplot(data=dados)+
+  geom_line(mapping=aes(x=ger, y=melhor), color="blue")
+```
+Desvio Padrão ao longo das gerações
+```{r}
+ggplot(data=dados)+
+  geom_point(mapping=aes(x=ger, y=dev.padr), color="blue", alpha =1/2)+
+  labs(y="Desvio Padrão")+
+  labs(x="Geração")
+  
+```
+## Implementação Paralela
+
+Essas implementações paralelizam os operadores ao longo da população para obter um ganho de performance.
+
+### Topologia Mestre-Escravo
+O processo principal(mestre) distribue suas operações entre processos escravos para ter um speedUp, geralmente implementado em controle ou em dados, este ultimo principalmente em GPUs.
+
+
+```{r}
+ggplot(data=speedup)+
+  geom_point(mapping=aes(x=slaves, y=speedup))+
+  geom_smooth(mapping=aes(x=slaves, y=speedup))+
+  #geom_point(mapping=aes(x=slaves, y=data))+
+  scale_colour_manual(name="Tipo de paralelização",
+      values=c(controle="red", dados="blue"))+
+  labs(x="Quantidade de Escravos")+
+  labs(y="Speed up médio")+
+  facet_grid(tipo~pop)
+```
+## Modelo Paralelo
+
+### Modelo de ilhas
+
+Fitness de cada ilha ao longo das gerações
+```{r}
+ggplot(data=ilhas)+
+  geom_point(mapping=aes(x=ger, y=Medio), color="blue")+
+  geom_point(mapping=aes(x=ger, y=pior), color="red")+
+  geom_point(mapping=aes(x=ger, y=melhor), color="green")+
+  scale_y_continuous(breaks=c(-2,-1, 0, 1,max(ilhas$melhor)))+
+  labs(y="Fitness")+
+  labs(x="Geração")+
+  facet_wrap(~ ilha, nrow = 2)
+```
+
+```{r}
+ggplot(data=ilhas)+
+  geom_smooth(mapping=aes(x=ger, y=melhor), color="green")+
+  geom_smooth(mapping=aes(x=ger, y=Medio), color="blue")+
+  geom_smooth(mapping=aes(x=ger, y=pior), color="red")+
+  labs(y="Fitness")+
+  labs(x="Geração")+
+  scale_y_continuous(breaks=c(-2,-1, 0, 1,max(dados$melhor)))+
+  facet_wrap(~ ilha, nrow = 2)
+```
+
+Desvio Padrão de cada ilha ao passar das gerações
+```{r}
+ggplot(data=ilhas)+
+  geom_point(mapping=aes(x=ger, y=dev.padr), color="blue", alpha =1/3)+
+  facet_wrap(~ ilha, nrow = 2)
+  
+```
+
+## Granulação Fina
+
+```{r}
+ggplot(data=gf)+
+  geom_line(mapping=aes(x=ger, y=fit), color="green")+
+  labs(y="Fitness")+
+  labs(x="Geração")+
+  #scale_y_continuous(breaks=c(-2,-1, 0, 1,max(gf$fit)))+
+  facet_wrap(~ no, nrow = 6)
+```
+
+```{r}
+p<-ggplot(data=gf)+
+  geom_point( mapping=aes(x=no ,y=fit, color=val))+
+  #facet_wrap(~ no, nrow = 5)+
+  labs(y="Fitness")+
+  labs(x="No")+
+  labs(title = 'Geracao: {frame_time}') +
+  transition_time(ger) +
+  ease_aes('linear')+
+  shadow_wake(wake_length = 0.1, alpha = 0.3)
+animate(p, res=300, width=1024, height=800 )
+anim_save('plot_gdpPercap_lifeExp2.gif')
+```
+
+
