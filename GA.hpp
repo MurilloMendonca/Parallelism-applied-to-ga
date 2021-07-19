@@ -217,15 +217,71 @@ class GA {
     Individuo torneio();
 
     //Estatisticas
+
+    /**
+     * @brief Calcula a aptidao media da populaca
+     * 
+     * @return double a aptidao media dentro todos os individuos
+     */
     double fitnessMedia();
+
+    /**
+     * @brief Obtem o melhor individuo dentre os presentes no vetor recebido
+     * 
+     * @return Individuo individuo com a maior aptidao dentre os recebidos
+     */
     Individuo melhor(std::vector<Individuo>);
+
+    /**
+     * @brief Obtem o melhor individio dentre todos da populacao
+     * 
+     * @return Individuo 
+     */
     Individuo melhordaPopulacao();
+
+    /**
+     * @brief Obtem o melhor individuo dentre os presentes no vetor recebido
+     * 
+     * @return Individuo individuo com a menor aptidao dentre os recebidos
+     */
     Individuo pior (std::vector<Individuo>);
+
+    /**
+     * @brief Obtem o pior individio dentre todos da populacao
+     * 
+     * @return Individuo 
+     */
     Individuo piordaPopulacao ();
+
+    /**
+     * @brief Obtem o vetor dos melhores individuos de cada geracao
+     * 
+     * @return std::vector<Individuo> vetor com o melhor individuo de cada populacao i em cada posicao i
+     */
     std::vector<Individuo> getmelhorPorGeracao();
+
+    /**
+     * @brief Obtem o vetor dos piores individuos de cada geracao
+     * 
+     * @return std::vector<Individuo> vetor com o pior individuo de cada populacao i em cada posicao i
+     */
     std::vector<Individuo> getpiorPorGeracao();
+
+    /**
+     * @brief Obtem o vetor das fitness medias de cada geracao
+     * 
+     * @return std::vector<double> vetor com a fitness de cada populacao i em cada posicao i
+     */
     std::vector<double> getMediaPorGeracao();
     std::vector<double> getDesvioPadraoPorGeracao();
+
+    /**
+     * @brief Obtem os n melhores individuos dentre o vetor vec
+     * 
+     * @param vec Vetor de individuos para a fonte da busca
+     * @param n Quantidade de melhores a serem retornados
+     * @return std::vector<Individuo> Vetor contendo os n melhores individuos de vec
+     */
     std::vector<Individuo> melhores( std::vector<Individuo> vec, int n);
     double desvioPadraoDaPopulacao();
 

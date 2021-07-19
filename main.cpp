@@ -131,7 +131,7 @@ void testaGAIM(){
     arq.close();
 }
 void testaGAFN(){
-    GAFN ga (18,20,10,-10,10,2,mutacao, cruzamento, 2);
+    GAFN ga (18,20,-10,10,2,mutacao, cruzamento, 2);
     ga.run(100);
     ga.mostraPopulacao();
     ofstream arq;

@@ -193,7 +193,7 @@ void GAFN::No::run(int n){
     
 }
 
-GAFN::GAFN(uint num, uint dimensao, uint geracoes, double inferior, double superior, uint precisao, double mut, double cruz, uint tam){
+GAFN::GAFN(uint num, uint dimensao, double inferior, double superior, uint precisao, double mut, double cruz, uint tam){
     No::setLimites(inferior, superior);
     No::setPrecisao(precisao);
     No::setMutacao(mut);
