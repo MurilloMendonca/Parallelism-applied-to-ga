@@ -12,12 +12,12 @@
 using namespace std;
 using namespace chrono;
 
-const uint geracoes= 50;
-const uint popSize = 100;
-const uint ntestes = 20;
+const uint geracoes= 100;
+const uint popSize = 50;
+const uint ntestes = 50;
 const uint quantidadeDeBits = 18;
-const uint maxSlaves=12;
-const double cruzamento=0.5;
+const uint maxSlaves=24;
+const double cruzamento=0.8;
 const double mutacao=0.01;
 
 void testaCodificacao(GA* g, double inf, double sup, int prec){
@@ -31,26 +31,46 @@ void testaCodificacao(GA* g, double inf, double sup, int prec){
     }
 }
 void testaGA(){
-    GA ga (18,popSize,-10,10,4,2, mutacao,cruzamento);
-    ga.run(geracoes);
-    cout<<endl<<"ger.\tpior\tMedio\tmelhor\tdesv.Padr";
-    for(int i=0;i<geracoes;i++){
-        cout<<endl<<setprecision(5)<<i<<"\t"<<ga.getpiorPorGeracao().at(i).getFitness()
-            <<"\t"<<ga.getMediaPorGeracao().at(i)
-            <<"\t"<<ga.getmelhorPorGeracao().at(i).getFitness()
-            <<"\t"<<ga.getDesvioPadraoPorGeracao().at(i);
+    vector<double> mediaPior(geracoes);
+    vector<double> mediaMedia(geracoes);
+    vector<double> mediaMelhor(geracoes);
+    vector<double> melhores(ntestes);
+    for(int i=0;i<ntestes;i++){
+        GAMS ga (18,popSize,-10,10,4,2, mutacao,cruzamento, 10,1);
+        ga.run(geracoes);
+        for(int j =0;j<geracoes;j++){
+            mediaPior.at(j) += ga.getpiorPorGeracao().at(j).getFitness()/ntestes;
+            mediaMedia.at(j) += ga.getMediaPorGeracao().at(j)/ntestes;
+            mediaMelhor.at(j)+= ga.getmelhorPorGeracao().at(j).getFitness()/ntestes;
+        }
+        melhores.at(i) = ga.getmelhorPorGeracao().at(geracoes-1).getFitness();
+        //ga.mostraPopulacao();
     }
-    ga.mostraPopulacao();
+    //GA ga (18,popSize,-10,10,4,2, mutacao,cruzamento);
+    //ga.run(geracoes);
+    cout<<endl<<"ger.\tpior\tMedio\tmelhor";
+    for(int i=0;i<geracoes;i++){
+        cout<<endl<<setprecision(5)<<i<<","<<mediaPior.at(i)
+            <<","<<mediaMedia.at(i)
+            <<","<<mediaMelhor.at(i);
+    }
+    //ga.mostraPopulacao();
     ofstream arq;
     arq.open("teste.txt");
-    arq<<"ger,pior,Medio,melhor,dev.padr";
+    arq<<"ger,pior,Medio,melhor";
     for(int i=0;i<geracoes;i++){
-        arq<<endl<<i<<","<<ga.getpiorPorGeracao().at(i).getFitness()
-            <<","<<ga.getMediaPorGeracao().at(i)
-            <<","<<ga.getmelhorPorGeracao().at(i).getFitness()
-            <<","<<ga.getDesvioPadraoPorGeracao().at(i);
+        arq<<endl<<setprecision(5)<<i<<","<<mediaPior.at(i)
+            <<","<<mediaMedia.at(i)
+            <<","<<mediaMelhor.at(i);
     }
     arq.close();
+    double media=0;
+    for(int i=0;i<ntestes;i++) media+= melhores.at(i)/ntestes;
+    double dp=0;
+    for(double x:melhores){
+        dp+=pow((x - media),2)/ntestes;
+    }
+    cout<<"\nDesvio Padrao: "<<dp;
 }
 void testaGAMS(){
     GAMS ga (18,popSize,-10,10,4,2, mutacao,cruzamento, 12);
@@ -106,10 +126,9 @@ void comparaGAMS(){
     arq.close();
 }
 void testaGAIM(){
-    int popSize=20;
-    int geracoes=100;
     int nIlhas=6;
-    GAIM ga (nIlhas,18,popSize,-10,10,4,2, mutacao,cruzamento,10);
+    int pop = popSize/nIlhas;
+    GAIM ga (nIlhas,18,pop,-10,10,4,2, mutacao,cruzamento,10);
 
     ga.run(geracoes);
     for(int i=0;i<nIlhas;i++){
@@ -132,7 +151,7 @@ void testaGAIM(){
 }
 void testaGAFN(){
     GAFN ga (18,20,-10,10,2,mutacao, cruzamento, 2);
-    ga.run(100);
+    ga.run(geracoes);
     ga.mostraPopulacao();
     ofstream arq;
     arq.open("granulacaofina.txt");
@@ -174,7 +193,7 @@ void testaSpeedUp(){
             arq<<pop<<","<<n<<",control,"<<media<<","<<(seq[0]/media)<<endl;
             media=0;
             for(int i=0;i<ntestes;i++){
-                GAMS ga (18,pop,-10,10,4,2, mutacao,n,2);
+                GAMS ga (18,pop,-10,10,4,2, mutacao,cruzamento,n,2);
                 auto inicio = chrono::high_resolution_clock::now();
                 ga.run(geracoes);
                 auto final = chrono::high_resolution_clock::now();
@@ -192,103 +211,8 @@ int main(void){
     //testaGA();
     //testaGAMS();
     //testaGAIM();
-    testaGAFN();
-    //testaSpeedUp();
-    /*
-    ofstream arq;
-    arq.open("tempos.csv");
-    arq<<"slaves,control,data\n";
-    
-    double media=0;
-    for(int i=0;i<ntestes;i++){
-        GA ga (18,popSize,-10,10,4,2, 0.05);
-        auto inicio = chrono::high_resolution_clock::now();
-        ga.run(geracoes);
-        auto final = chrono::high_resolution_clock::now();
-        auto diff = duration_cast<milliseconds>(final-inicio);
-        media +=diff.count()/((double)ntestes);
-    }
-    cout<<"Tempo de execucao para sequencial: "<<media<<" milissegundos\n";
-    for(int n=1;n<21;n++){
-        media=0;
-        for(int i=0;i<ntestes;i++){
-            GAMS ga (18,popSize,-10,10,4,2, 0.05,n);
-            auto inicio = chrono::high_resolution_clock::now();
-            ga.run(geracoes);
-            auto final = chrono::high_resolution_clock::now();
-            auto diff = duration_cast<milliseconds>(final-inicio);
-            media +=diff.count()/((double)ntestes);
-        }
-        cout<<"Tempo de execucao para "<<n<<" escravos em controle : "<<media<<" milissegundos\n";
-        arq<<n<<","<<media;
-        media=0;
-        for(int i=0;i<ntestes;i++){
-            GAMS ga (18,popSize,-10,10,4,2, 0.05,n,2);
-            auto inicio = chrono::high_resolution_clock::now();
-            ga.run(geracoes);
-            auto final = chrono::high_resolution_clock::now();
-            auto diff = duration_cast<milliseconds>(final-inicio);
-            media +=diff.count()/((double)ntestes);
-        }
-        arq<<","<<media<<endl;
-        cout<<"Tempo de execucao para "<<n<<" escravos em dados: "<<media<<" milissegundos\n";
-    }*/
-    /*
-    popSize=50;
-    geracoes=100;
-    int nIlhas=6;
-    GAIM ga (nIlhas,18,popSize,-10,10,4,2, 0.01,100);
-    //GA ga (18,popSize,-10,10,4,2, 0.05);
-    //testaCodificacao(&ga, -10, 10, 4);
-    return 0;
-    ga.run(geracoes);
-    for(int i=0;i<nIlhas;i++){
-        cout<<"\n\nPopulacao da ilha "<<i;
-        ga[i]->mostraPopulacao();
-    }
-    //*/
-    /*
-    ofstream arq;
-    arq.open("ilhas.txt");
-    arq<<"ger,pior,Medio,melhor,dev.padr,ilha";
-    for(int i=0;i<geracoes;i++){
-        for(int ilha=0;ilha<nIlhas;ilha++)
-            arq<<endl<<i<<","<<ga[ilha]->getpiorPorGeracao().at(i).getFitness()
-                <<","<<ga[ilha]->getMediaPorGeracao().at(i)
-                <<","<<ga[ilha]->getmelhorPorGeracao().at(i).getFitness()
-                <<","<<ga[ilha]->getDesvioPadraoPorGeracao().at(i)
-                <<","<<"ilha_"<<ilha;
-    }
-    arq.close();
-    //
-    
-    GAFN ga (18,5,geracoes,-10,10,4,0.01, 0.5, 2);
-    ga.run(100);
-    ga.mostraPopulacao();
-    
-    ga.run(geracoes);
-    cout<<endl<<"ger.\tpior\tMedio\tmelhor\tdesv.Padr";
-    for(int i=0;i<geracoes;i++){
-        cout<<endl<<setprecision(5)<<i<<"\t"<<ga.getpiorPorGeracao().at(i).getFitness()
-            <<"\t"<<ga.getMediaPorGeracao().at(i)
-            <<"\t"<<ga.getmelhorPorGeracao().at(i).getFitness()
-            <<"\t"<<ga.getDesvioPadraoPorGeracao().at(i);
-    }
-    ga.mostraPopulacao();
-    ofstream arq;
-    arq.open("teste.txt");
-    arq<<"ger,pior,Medio,melhor,dev.padr";
-    for(int i=0;i<geracoes;i++){
-        arq<<endl<<i<<","<<ga.getpiorPorGeracao().at(i).getFitness()
-            <<","<<ga.getMediaPorGeracao().at(i)
-            <<","<<ga.getmelhorPorGeracao().at(i).getFitness()
-            <<","<<ga.getDesvioPadraoPorGeracao().at(i);
-    }
-    //*/
-    
-    //ga.run(100);
-    //ga.mostraPopulacao();
-    //cout<<"\nmaior y="<<ga.melhordaPopulacao().getFitness()<<" em x="<<ga.converte_gray_dec(ga.melhordaPopulacao().getCromossomo());
-    //std::cout.flush();
+    //testaGAFN();
+    testaSpeedUp();
+   
     return 0;
 }

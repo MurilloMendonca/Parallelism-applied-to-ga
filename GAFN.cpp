@@ -181,14 +181,8 @@ void GAFN::No::run(int n){
     for(int i=0;i<n;i++){
         historicoFit.push_back(getFitness());
         historicoVal.push_back(converte(getCromossomo()));
-        //std::cout<<"\ncomecando ciclo";
-        //std::cout.flush();
         muta();
-        //std::cout<<"\nmutei";
-        //std::cout.flush();
         cruza();
-        //std::cout<<"\ncruzei";
-        //std::cout.flush();
     }
     
 }

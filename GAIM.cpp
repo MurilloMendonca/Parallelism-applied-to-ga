@@ -11,14 +11,14 @@ this->periodo=periodos;
 }
 
 GAIM::GAIM(uint nIlhas, int numeroDeBits, int tamanhoDaPopulacao, double limiteInferior, double limiteSuperior,
-             int precisao,int torneioTam, double mut,double cruzamento, uint periodos, uint modo)
+             int precisao,int torneioTam, double mut,double cruzamento, uint periodos)
 {
     
     gen = std::mt19937(rd());
     ilhas = std::vector<Ilha>();
     for(int i=0;i<nIlhas;i++){
         Ilha* a = new Ilha ( numeroDeBits,  tamanhoDaPopulacao,  limiteInferior,  limiteSuperior,
-              precisao, torneioTam,  mut,  periodos);
+              precisao, torneioTam,  mut, cruzamento,  periodos);
         this->ilhas.push_back(*a);
     }
     //std::vector<GAIM::Ilha>* GAIM::Ilha::arquipelago();

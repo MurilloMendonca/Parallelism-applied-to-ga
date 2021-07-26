@@ -284,7 +284,7 @@ class GA {
      */
     std::vector<Individuo> melhores( std::vector<Individuo> vec, int n);
     double desvioPadraoDaPopulacao();
-
+    
     //Conversoes
     double converte_bin_dec(std::vector<bool> gray);
     std::vector<bool> converte_dec_bin(double x);

@@ -1,4 +1,6 @@
 #include "GA.hpp"
+#include "Individuo.hpp"
+#include <iostream>
 
 
 GA::GA(int numeroDeBits, int tamanhoDaPopulacao, double limiteInferior, 
@@ -67,18 +69,10 @@ void GA::cruzaPopulacao(){
     while (novapop.size()<(tamanhoPopulacao-quantidadeElitismo)){
         Individuo pai1 = torneio();
         Individuo pai2 = torneio();
-        if(distribution(gen)>taxaCruzamento){
+
             filhos = cruza(pai1, pai2);
-            if(valido(filhos[0]))
-                novapop.push_back(filhos[0]);
-            if(valido(filhos[1])&&(novapop.size()<(tamanhoPopulacao-quantidadeElitismo)))
-                novapop.push_back(filhos[1]);
-        }
-        else{
-            novapop.push_back(pai1);
-            if(novapop.size()<(tamanhoPopulacao-quantidadeElitismo))
-                novapop.push_back(pai2);
-        }
+            novapop.push_back(filhos[0]);
+            novapop.push_back(filhos[1]);
     }
     populacao=novapop;
 }
@@ -91,25 +85,43 @@ std::vector<Individuo> GA::melhores( std::vector<Individuo> vec, int n){
     return v;
 }
 std::vector<Individuo> GA::cruza( Individuo pai1,  Individuo pai2){
-    std::uniform_int_distribution<int> distribution(0,numBits-1);
+    
+    std::uniform_real_distribution<double> dist(0,1);
+    if(dist(gen)<taxaCruzamento){
+        std::uniform_int_distribution<int> distribution(0,numBits-1);
+        std::vector<std::vector<bool>> genFilhos(2);
+        std::vector<bool> genesFilho1;
+        std::vector<bool> genesFilho2;
+        bool nval;
+        do{
+            genesFilho1.clear();
+            genesFilho2.clear();
 
-    std::vector<std::vector<bool>> genFilhos(2);
-    std::vector<bool> genesFilho1;
-    std::vector<bool> genesFilho2;
+            int corte = distribution(gen);
 
-    int corte = distribution(gen);
-    for(int i=0;i<corte;i++){
-        genesFilho1.push_back(pai1.getCromossomo()[i]);
-        genesFilho2.push_back(pai2.getCromossomo()[i]);
-    }
-    for(int i=corte;i<numBits;i++){
-        genesFilho1.push_back(pai1.getCromossomo()[i]);
-        genesFilho2.push_back(pai2.getCromossomo()[i]);
+            for(int i=0;i<corte;i++){
+                genesFilho1.push_back(pai1.getCromossomo()[i]);
+                genesFilho2.push_back(pai2.getCromossomo()[i]);
+            }
+            for(int i=corte;i<numBits;i++){
+                genesFilho1.push_back(pai2.getCromossomo()[i]);
+                genesFilho2.push_back(pai1.getCromossomo()[i]);
+            }
+            Individuo f1(genesFilho1);
+            Individuo f2(genesFilho2);
+
+            nval=!valido(f1)||!valido(f2);
+        }while(nval);
+        std::vector<Individuo>res;
+        res.emplace_back(genesFilho1);
+        res.emplace_back(genesFilho2);
+        return res;
     }
     std::vector<Individuo>res;
-    res.emplace_back(genesFilho1);
-    res.emplace_back(genesFilho2);
+    res.push_back(pai1);
+    res.push_back(pai2);
     return res;
+    
 }
 void GA::mutaPopulacao(){
     std::uniform_real_distribution<double> distribution(0,1);
@@ -123,7 +135,8 @@ void GA::muta(Individuo& ind){
     Individuo mutado(vec);
     do{
         vec = ind.getCromossomo();
-        for(int i =0;i<numBits;i++)
+        int tam = vec.size();
+        for(int i =0;i<tam;i++)
             if(distribution(gen)<taxaMutacao)
                 vec[i] = !vec[i];
         mutado.setCromossomo(vec);
